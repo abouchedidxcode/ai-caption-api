@@ -61,24 +61,53 @@ function validateRequestBody(body) {
   if (!body.imageData) errors.push('imageData field is required');
   if (!body.mimeType) errors.push('mimeType field is required');
   
+  // Debug mode - skip validation if debug flag is set
+  if (body.debugMode === true) {
+    console.log('🐛 DEBUG MODE: Skipping validation checks');
+    return { isValid: true, errors: [], debug: true };
+  }
+  
   if (body.imageData && typeof body.imageData === 'string') {
     // More flexible base64 validation - allow whitespace and check basic format
+    const originalLength = body.imageData.length;
     const cleanedBase64 = body.imageData.replace(/\s/g, '');
+    const cleanedLength = cleanedBase64.length;
     const base64Pattern = /^[A-Za-z0-9+\/]*={0,2}$/;
     
+    // Detailed debugging info for base64 validation
+    const debugInfo = {
+      originalLength,
+      cleanedLength,
+      whitespaceRemoved: originalLength - cleanedLength,
+      firstChars: cleanedBase64.substring(0, 20),
+      lastChars: cleanedBase64.substring(cleanedBase64.length - 20),
+      hasInvalidChars: !base64Pattern.test(cleanedBase64)
+    };
+    
     if (!base64Pattern.test(cleanedBase64)) {
-      errors.push('imageData must be valid base64 encoded string');
+      // Find invalid characters for better debugging
+      const invalidChars = [...new Set(cleanedBase64.match(/[^A-Za-z0-9+\/=]/g) || [])];
+      errors.push(`imageData contains invalid base64 characters: ${invalidChars.join(', ')} | Debug: ${JSON.stringify(debugInfo)}`);
     }
     
     // Use cleaned base64 for size calculation
     const estimatedSize = (cleanedBase64.length * 3) / 4;
     if (estimatedSize > AI_CONFIG.MAX_IMAGE_SIZE) {
-      errors.push(`Image size exceeds maximum allowed size of ${AI_CONFIG.MAX_IMAGE_SIZE / (1024 * 1024)}MB`);
+      errors.push(`Image size exceeds maximum allowed size of ${AI_CONFIG.MAX_IMAGE_SIZE / (1024 * 1024)}MB (current: ${(estimatedSize / (1024 * 1024)).toFixed(2)}MB)`);
     }
     
     // Check for minimum size (too small probably means invalid data)
     if (estimatedSize < 100) {
-      errors.push('Image data appears to be too small or invalid');
+      errors.push(`Image data appears to be too small or invalid (${estimatedSize} bytes) | Debug: ${JSON.stringify(debugInfo)}`);
+    }
+    
+    // Additional validation checks
+    if (cleanedBase64.length === 0) {
+      errors.push('imageData is empty after cleaning');
+    }
+    
+    if (cleanedBase64.length % 4 !== 0) {
+      errors.push(`imageData length (${cleanedBase64.length}) is not valid base64 (must be multiple of 4) | Debug: ${JSON.stringify(debugInfo)}`);
     }
   }
   

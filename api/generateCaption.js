@@ -9,7 +9,7 @@
 
 const AI_CONFIG = {
   CURRENT_PROVIDER: 'openai',
-  MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
+  MAX_IMAGE_SIZE: 20 * 1024 * 1024, // 20MB (GPT-4o can handle larger images)
   REQUEST_TIMEOUT: 30000, // 30 seconds
   RATE_LIMIT: 60, // requests per minute
 };
@@ -62,14 +62,23 @@ function validateRequestBody(body) {
   if (!body.mimeType) errors.push('mimeType field is required');
   
   if (body.imageData && typeof body.imageData === 'string') {
+    // More flexible base64 validation - allow whitespace and check basic format
+    const cleanedBase64 = body.imageData.replace(/\s/g, '');
     const base64Pattern = /^[A-Za-z0-9+\/]*={0,2}$/;
-    if (!base64Pattern.test(body.imageData)) {
+    
+    if (!base64Pattern.test(cleanedBase64)) {
       errors.push('imageData must be valid base64 encoded string');
     }
     
-    const estimatedSize = (body.imageData.length * 3) / 4;
+    // Use cleaned base64 for size calculation
+    const estimatedSize = (cleanedBase64.length * 3) / 4;
     if (estimatedSize > AI_CONFIG.MAX_IMAGE_SIZE) {
       errors.push(`Image size exceeds maximum allowed size of ${AI_CONFIG.MAX_IMAGE_SIZE / (1024 * 1024)}MB`);
+    }
+    
+    // Check for minimum size (too small probably means invalid data)
+    if (estimatedSize < 100) {
+      errors.push('Image data appears to be too small or invalid');
     }
   }
   
@@ -98,6 +107,9 @@ async function processWithOpenAI(imageData, mimeType, promptType) {
   const provider = AI_PROVIDERS.openai;
   const prompt = PROMPT_CONFIG[promptType] || PROMPT_CONFIG.default;
   
+  // Clean the base64 data (remove any whitespace)
+  const cleanedImageData = imageData.replace(/\s/g, '');
+  
   const requestPayload = {
     model: provider.model,
     messages: [{
@@ -107,7 +119,7 @@ async function processWithOpenAI(imageData, mimeType, promptType) {
         {
           type: 'image_url',
           image_url: {
-            url: `data:${mimeType};base64,${imageData}`,
+            url: `data:${mimeType};base64,${cleanedImageData}`,
             detail: 'high'
           }
         }

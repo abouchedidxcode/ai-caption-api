@@ -29,7 +29,7 @@ const AI_PROVIDERS = {
 };
 
 const PROMPT_CONFIG = {
-  default: `Create a comprehensive, engaging caption for this image. Focus on main subjects, setting, mood, and notable details. Keep it concise but descriptive (2-3 sentences).`,
+  default: `if this is a picture of a dog respond with the words bark bark, if it is not respond with this is not a dog`,
 };
 
 // ========================================================================

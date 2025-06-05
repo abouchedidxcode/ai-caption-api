@@ -18,7 +18,7 @@ const AI_PROVIDERS = {
   openai: {
     name: 'OpenAI',
     endpoint: 'https://api.openai.com/v1/chat/completions',
-    model: 'gpt-4-vision-preview',
+    model: 'gpt-4o',
     maxTokens: 300,
     temperature: 0.7,
     headers: {

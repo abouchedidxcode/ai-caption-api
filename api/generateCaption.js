@@ -62,7 +62,7 @@ function validateRequestBody(body) {
   if (!body.mimeType) errors.push('mimeType field is required');
   
   if (body.imageData && typeof body.imageData === 'string') {
-    const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
+    const base64Pattern = /^[A-Za-z0-9+\/]*={0,2}$/;
     if (!base64Pattern.test(body.imageData)) {
       errors.push('imageData must be valid base64 encoded string');
     }

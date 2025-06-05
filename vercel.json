@@ -1,7 +1,6 @@
 {
   "version": 2,
   "name": "ai-caption-api",
-  "description": "AI-powered image caption generation API",
   "functions": {
     "api/generateCaption.js": {
       "maxDuration": 30

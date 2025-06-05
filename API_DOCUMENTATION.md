@@ -37,8 +37,7 @@ Generates an AI-powered caption for the provided image.
 ```json
 {
   "imageData": "base64-encoded-image-string",
-  "mimeType": "image/jpeg",
-  "promptType": "default"
+  "mimeType": "image/jpeg"
 }
 ```
 
@@ -46,7 +45,6 @@ Generates an AI-powered caption for the provided image.
 |-------|------|----------|-------------|
 | `imageData` | string | Yes | Base64 encoded image data |
 | `mimeType` | string | Yes | Image MIME type (jpeg, png, webp, heic) |
-| `promptType` | string | No | Caption style: `default`, `social`, `accessibility` |
 
 #### Response Format
 
@@ -59,7 +57,6 @@ Generates an AI-powered caption for the provided image.
     "caption": "A beautiful sunset over the ocean with waves gently lapping at the shore, creating a peaceful and serene atmosphere.",
     "provider": "OpenAI",
     "model": "gpt-4-vision-preview",
-    "promptType": "default",
     "confidence": "high",
     "usage": {
       "prompt_tokens": 1234,
@@ -114,7 +111,7 @@ class CaptionAPIClient {
     private let baseURL = "https://your-project.vercel.app"
     private let appToken = "your-app-token-here"
     
-    func generateCaption(for image: UIImage, promptType: String = "default") async throws -> CaptionResponse {
+    func generateCaption(for image: UIImage) async throws -> CaptionResponse {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
             throw APIError.invalidImage
         }
@@ -123,8 +120,7 @@ class CaptionAPIClient {
         
         let requestBody = CaptionRequest(
             imageData: base64String,
-            mimeType: "image/jpeg",
-            promptType: promptType
+            mimeType: "image/jpeg"
         )
         
         var request = URLRequest(url: URL(string: "\(baseURL)/api/generateCaption")!)
@@ -153,7 +149,6 @@ class CaptionAPIClient {
 struct CaptionRequest: Codable {
     let imageData: String
     let mimeType: String
-    let promptType: String
 }
 
 struct CaptionResponse: Codable {
@@ -166,7 +161,6 @@ struct CaptionData: Codable {
     let caption: String
     let provider: String
     let model: String
-    let promptType: String
     let confidence: String
     let usage: TokenUsage?
     let processingTime: String
@@ -237,7 +231,7 @@ class ViewController: UIViewController {
         
         Task {
             do {
-                let response = try await apiClient.generateCaption(for: image, promptType: "default")
+                let response = try await apiClient.generateCaption(for: image)
                 
                 await MainActor.run {
                     captionLabel.text = response.data.caption
@@ -411,8 +405,7 @@ curl -X POST https://your-project.vercel.app/api/generateCaption \
   -H "X-App-Token: your-app-token" \
   -d '{
     "imageData": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-    "mimeType": "image/png",
-    "promptType": "default"
+    "mimeType": "image/png"
   }'
 ```
 
@@ -436,7 +429,6 @@ class CaptionAPITests: XCTestCase {
         
         XCTAssertTrue(response.success)
         XCTAssertFalse(response.data.caption.isEmpty)
-        XCTAssertEqual(response.data.promptType, "default")
     }
 }
 ```
@@ -492,4 +484,4 @@ For issues or questions:
 ### v1.0.0
 - Initial release with OpenAI GPT-4 Vision support
 - Basic authentication and validation
-- Three prompt types: default, social, accessibility
+- Default caption generation

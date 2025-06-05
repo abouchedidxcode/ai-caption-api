@@ -30,8 +30,6 @@ const AI_PROVIDERS = {
 
 const PROMPT_CONFIG = {
   default: `Create a comprehensive, engaging caption for this image. Focus on main subjects, setting, mood, and notable details. Keep it concise but descriptive (2-3 sentences).`,
-  social: `Create an engaging social media caption. Make it attention-grabbing, mention key visual elements, under 100 characters, friendly tone.`,
-  accessibility: `Create a detailed accessibility description including all people, objects, text, spatial relationships, colors, and lighting.`,
 };
 
 // ========================================================================
@@ -122,19 +120,19 @@ function validateRequestBody(body) {
 // AI PROVIDER ABSTRACTION LAYER
 // ========================================================================
 
-async function processWithAIProvider(imageData, mimeType, promptType = 'default') {
+async function processWithAIProvider(imageData, mimeType) {
   const provider = AI_PROVIDERS[AI_CONFIG.CURRENT_PROVIDER];
   
   if (!provider) {
     throw new Error(`AI provider '${AI_CONFIG.CURRENT_PROVIDER}' not found`);
   }
   
-  return await processWithOpenAI(imageData, mimeType, promptType);
+  return await processWithOpenAI(imageData, mimeType);
 }
 
-async function processWithOpenAI(imageData, mimeType, promptType) {
+async function processWithOpenAI(imageData, mimeType) {
   const provider = AI_PROVIDERS.openai;
-  const prompt = PROMPT_CONFIG[promptType] || PROMPT_CONFIG.default;
+  const prompt = PROMPT_CONFIG.default;
   
   // Clean the base64 data (remove any whitespace)
   const cleanedImageData = imageData.replace(/\s/g, '');
@@ -187,7 +185,6 @@ async function processWithOpenAI(imageData, mimeType, promptType) {
       caption,
       provider: provider.name,
       model: provider.model,
-      promptType,
       confidence: data.choices?.[0]?.finish_reason === 'stop' ? 'high' : 'medium',
       usage: data.usage || null,
     };
@@ -295,8 +292,7 @@ export default async function handler(req, res) {
     const startTime = Date.now();
     const aiResult = await processWithAIProvider(
       req.body.imageData,
-      req.body.mimeType,
-      req.body.promptType || 'default'
+      req.body.mimeType
     );
     const processingTime = Date.now() - startTime;
     

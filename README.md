@@ -101,24 +101,14 @@ claude: {
 }
 ```
 
-### Modifying Prompts
+### Modifying the Caption Prompt
 
 Edit the `PROMPT_CONFIG` object in `api/generateCaption.js`:
 
 ```javascript
 const PROMPT_CONFIG = {
-  // Default general captioning
-  default: `Your custom default prompt here...`,
-  
-  // Social media optimized
-  social: `Your social media prompt here...`,
-  
-  // Accessibility descriptions
-  accessibility: `Your accessibility prompt here...`,
-  
-  // Add custom prompt types
-  marketing: `Create a marketing-focused caption that highlights product benefits...`,
-  technical: `Provide technical details about objects and processes shown...`,
+  // Default caption prompt
+  default: `Your custom prompt here...`,
 };
 ```
 
@@ -164,8 +154,7 @@ POST /api/generateCaption
 ```javascript
 {
   "imageData": "base64-encoded-image-string",
-  "mimeType": "image/jpeg",
-  "promptType": "default" // optional: default, social, accessibility
+  "mimeType": "image/jpeg"
 }
 ```
 
@@ -293,8 +282,7 @@ curl -X POST http://localhost:3000/api/generateCaption \
   -H "X-App-Token: your-token-here" \
   -d '{
     "imageData": "base64-encoded-image",
-    "mimeType": "image/jpeg",
-    "promptType": "default"
+    "mimeType": "image/jpeg"
   }'
 ```
 

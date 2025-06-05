@@ -183,7 +183,7 @@ class APIError extends Error {
 }
 
 function createErrorResponse(error) {
-  return {
+  const response = {
     success: false,
     error: {
       code: error.code,
@@ -191,6 +191,13 @@ function createErrorResponse(error) {
       timestamp: error.timestamp
     }
   };
+  
+  // Include details for validation errors to help with debugging
+  if (error.details) {
+    response.error.details = error.details;
+  }
+  
+  return response;
 }
 
 function createSuccessResponse(data, metadata = {}) {
@@ -270,10 +277,16 @@ export default async function handler(req, res) {
   } catch (error) {
     if (!(error instanceof APIError)) {
       console.error('Unexpected error:', error);
-      error = new APIError(ERROR_TYPES.AI_PROVIDER_ERROR, error.message, 500);
+      error = new APIError(ERROR_TYPES.AI_PROVIDER_ERROR, 
+        error.message, 500);
     }
     
-    console.error(`[${requestId}] Error:`, error.message);
+    console.error(`[${requestId}] Error:`, {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      stack: error.stack
+    });
     return res.status(error.statusCode).json(createErrorResponse(error));
   }
 } 

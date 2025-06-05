@@ -1,0 +1,72 @@
+# ========================================================================
+# ENVIRONMENT CONFIGURATION EXAMPLE
+# ========================================================================
+# Copy this content to your .env.local file and replace placeholder values
+# 
+# SECURITY NOTES:
+# - Never commit .env.local to version control
+# - Add .env.local to your .gitignore file
+# - Use Vercel dashboard for production environment variables
+# - Rotate keys regularly for security
+
+# ========================================================================
+# AI PROVIDER CONFIGURATION
+# ========================================================================
+
+# OpenAI API Key (Primary Provider)
+# Get from: https://platform.openai.com/api-keys
+# Required for GPT-4 Vision image captioning
+OPENAI_API_KEY=sk-placeholder-replace-with-real-key
+
+# Google Gemini API Key (Optional - Future Support)
+# Get from: https://makersuite.google.com/app/apikey
+GEMINI_API_KEY=your-gemini-api-key-here
+
+# Anthropic Claude API Key (Optional - Future Support)
+# Get from: https://console.anthropic.com/
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+
+# ========================================================================
+# AUTHENTICATION & SECURITY
+# ========================================================================
+
+# App Authentication Token (CHANGE THIS!)
+# Generate UUID: https://www.uuidgenerator.net/
+# Your iOS app sends this in X-App-Token header
+APP_TOKEN=12345678-1234-1234-1234-123456789abc
+
+# ========================================================================
+# ENVIRONMENT SETTINGS
+# ========================================================================
+
+# Environment mode: development, production, test
+NODE_ENV=development
+
+# ========================================================================
+# SETUP INSTRUCTIONS
+# ========================================================================
+#
+# 1. Create .env.local file in your project root
+# 2. Copy the content above into .env.local
+# 3. Get OpenAI API key from platform.openai.com
+# 4. Generate new UUID for APP_TOKEN at uuidgenerator.net
+# 5. Replace placeholder values with real ones
+# 6. Test locally: npm run dev
+# 7. For production: Set variables in Vercel Dashboard
+#
+# See README.md for detailed setup instructions
+
+# ========================================================================
+# TROUBLESHOOTING
+# ========================================================================
+#
+# Problem: "Authentication failed" errors
+# Solution: Verify APP_TOKEN matches between iOS app and .env.local
+#
+# Problem: "OpenAI API error: 401"
+# Solution: Check OPENAI_API_KEY is correct and has credits
+#
+# Problem: "Function timeout" errors
+# Solution: Reduce image size or increase timeout in configuration
+#
+# For more help, see README.md troubleshooting section 

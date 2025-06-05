@@ -1,0 +1,279 @@
+/**
+ * IMAGE CAPTION GENERATION API ENDPOINT
+ * Production-ready serverless function for AI-powered image captioning
+ */
+
+// ========================================================================
+// CONFIGURATION SECTION - Modify these values for different behavior
+// ========================================================================
+
+const AI_CONFIG = {
+  CURRENT_PROVIDER: 'openai',
+  MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
+  REQUEST_TIMEOUT: 30000, // 30 seconds
+  RATE_LIMIT: 60, // requests per minute
+};
+
+const AI_PROVIDERS = {
+  openai: {
+    name: 'OpenAI',
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+    model: 'gpt-4-vision-preview',
+    maxTokens: 300,
+    temperature: 0.7,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+    }
+  }
+};
+
+const PROMPT_CONFIG = {
+  default: `Create a comprehensive, engaging caption for this image. Focus on main subjects, setting, mood, and notable details. Keep it concise but descriptive (2-3 sentences).`,
+  social: `Create an engaging social media caption. Make it attention-grabbing, mention key visual elements, under 100 characters, friendly tone.`,
+  accessibility: `Create a detailed accessibility description including all people, objects, text, spatial relationships, colors, and lighting.`,
+};
+
+// ========================================================================
+// SECURITY VALIDATION SECTION
+// ========================================================================
+
+const SECURITY_CONFIG = {
+  REQUIRED_APP_TOKEN: process.env.APP_TOKEN,
+  ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+  MAX_REQUEST_SIZE: 6 * 1024 * 1024,
+};
+
+function validateAppToken(token) {
+  if (!token || typeof token !== 'string') return false;
+  const tokenPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return tokenPattern.test(token) && token === SECURITY_CONFIG.REQUIRED_APP_TOKEN;
+}
+
+function validateRequestBody(body) {
+  const errors = [];
+  
+  if (!body || typeof body !== 'object') {
+    errors.push('Request body must be a valid JSON object');
+    return { isValid: false, errors };
+  }
+  
+  if (!body.imageData) errors.push('imageData field is required');
+  if (!body.mimeType) errors.push('mimeType field is required');
+  
+  if (body.imageData && typeof body.imageData === 'string') {
+    const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Pattern.test(body.imageData)) {
+      errors.push('imageData must be valid base64 encoded string');
+    }
+    
+    const estimatedSize = (body.imageData.length * 3) / 4;
+    if (estimatedSize > AI_CONFIG.MAX_IMAGE_SIZE) {
+      errors.push(`Image size exceeds maximum allowed size of ${AI_CONFIG.MAX_IMAGE_SIZE / (1024 * 1024)}MB`);
+    }
+  }
+  
+  if (body.mimeType && !SECURITY_CONFIG.ALLOWED_IMAGE_TYPES.includes(body.mimeType)) {
+    errors.push(`Unsupported image type: ${body.mimeType}`);
+  }
+  
+  return { isValid: errors.length === 0, errors };
+}
+
+// ========================================================================
+// AI PROVIDER ABSTRACTION LAYER
+// ========================================================================
+
+async function processWithAIProvider(imageData, mimeType, promptType = 'default') {
+  const provider = AI_PROVIDERS[AI_CONFIG.CURRENT_PROVIDER];
+  
+  if (!provider) {
+    throw new Error(`AI provider '${AI_CONFIG.CURRENT_PROVIDER}' not found`);
+  }
+  
+  return await processWithOpenAI(imageData, mimeType, promptType);
+}
+
+async function processWithOpenAI(imageData, mimeType, promptType) {
+  const provider = AI_PROVIDERS.openai;
+  const prompt = PROMPT_CONFIG[promptType] || PROMPT_CONFIG.default;
+  
+  const requestPayload = {
+    model: provider.model,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'text', text: prompt },
+        {
+          type: 'image_url',
+          image_url: {
+            url: `data:${mimeType};base64,${imageData}`,
+            detail: 'high'
+          }
+        }
+      ]
+    }],
+    max_tokens: provider.maxTokens,
+    temperature: provider.temperature,
+  };
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), AI_CONFIG.REQUEST_TIMEOUT);
+  
+  try {
+    const response = await fetch(provider.endpoint, {
+      method: 'POST',
+      headers: provider.headers,
+      body: JSON.stringify(requestPayload),
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+    
+    const data = await response.json();
+    const caption = data.choices?.[0]?.message?.content?.trim();
+    
+    if (!caption) {
+      throw new Error('No caption generated by OpenAI');
+    }
+    
+    return {
+      caption,
+      provider: provider.name,
+      model: provider.model,
+      promptType,
+      confidence: data.choices?.[0]?.finish_reason === 'stop' ? 'high' : 'medium',
+      usage: data.usage || null,
+    };
+    
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout: OpenAI API took too long to respond');
+    }
+    throw new Error(`OpenAI processing failed: ${error.message}`);
+  }
+}
+
+// ========================================================================
+// ERROR HANDLING
+// ========================================================================
+
+const ERROR_TYPES = {
+  AUTHENTICATION_ERROR: { code: 'AUTH_001', message: 'Authentication failed' },
+  VALIDATION_ERROR: { code: 'VAL_001', message: 'Request validation failed' },
+  AI_PROVIDER_ERROR: { code: 'AI_001', message: 'AI provider error' },
+  METHOD_NOT_ALLOWED: { code: 'METHOD_001', message: 'Method not allowed' }
+};
+
+class APIError extends Error {
+  constructor(type, details = null, statusCode = 500) {
+    super(type.message);
+    this.name = 'APIError';
+    this.type = type;
+    this.code = type.code;
+    this.details = details;
+    this.statusCode = statusCode;
+    this.timestamp = new Date().toISOString();
+  }
+}
+
+function createErrorResponse(error) {
+  return {
+    success: false,
+    error: {
+      code: error.code,
+      message: error.message,
+      timestamp: error.timestamp
+    }
+  };
+}
+
+function createSuccessResponse(data, metadata = {}) {
+  return {
+    success: true,
+    data,
+    metadata: {
+      timestamp: new Date().toISOString(),
+      provider: AI_CONFIG.CURRENT_PROVIDER,
+      ...metadata
+    }
+  };
+}
+
+// ========================================================================
+// MAIN API HANDLER
+// ========================================================================
+
+export default async function handler(req, res) {
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-App-Token');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  if (req.method !== 'POST') {
+    const error = new APIError(ERROR_TYPES.METHOD_NOT_ALLOWED, 
+      `Method ${req.method} not allowed`, 405);
+    return res.status(405).json(createErrorResponse(error));
+  }
+  
+  try {
+    // Authentication
+    const appToken = req.headers['x-app-token'] || req.headers['authorization']?.replace('Bearer ', '');
+    if (!validateAppToken(appToken)) {
+      throw new APIError(ERROR_TYPES.AUTHENTICATION_ERROR, 
+        'Invalid or missing app token', 401);
+    }
+    
+    // Request validation
+    const validation = validateRequestBody(req.body);
+    if (!validation.isValid) {
+      throw new APIError(ERROR_TYPES.VALIDATION_ERROR, 
+        validation.errors, 400);
+    }
+    
+    // AI Processing
+    const startTime = Date.now();
+    const aiResult = await processWithAIProvider(
+      req.body.imageData,
+      req.body.mimeType,
+      req.body.promptType || 'default'
+    );
+    const processingTime = Date.now() - startTime;
+    
+    const responseData = {
+      ...aiResult,
+      processingTime: `${processingTime}ms`,
+      requestId
+    };
+    
+    const response = createSuccessResponse(responseData, {
+      requestId,
+      processingTime,
+      imageSize: req.body.imageData.length,
+      mimeType: req.body.mimeType
+    });
+    
+    return res.status(200).json(response);
+    
+  } catch (error) {
+    if (!(error instanceof APIError)) {
+      console.error('Unexpected error:', error);
+      error = new APIError(ERROR_TYPES.AI_PROVIDER_ERROR, error.message, 500);
+    }
+    
+    console.error(`[${requestId}] Error:`, error.message);
+    return res.status(error.statusCode).json(createErrorResponse(error));
+  }
+} 

@@ -5,7 +5,6 @@
   "main": "api/generateCaption.js",
   "scripts": {
     "dev": "vercel dev",
-    "build": "vercel build",
     "deploy": "vercel --prod",
     "test": "jest",
     "test:watch": "jest --watch",

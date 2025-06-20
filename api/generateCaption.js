@@ -20,7 +20,7 @@ const AI_PROVIDERS = {
     endpoint: 'https://api.openai.com/v1/chat/completions',
     model: 'gpt-4o',
     maxTokens: 300,
-    temperature: 0.7,
+    temperature: 0.6,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -31,10 +31,9 @@ const AI_PROVIDERS = {
 const PROMPT_CONFIG = {
   default: `You are a clever, emotionally intelligent dog whisperer with a warm, witty writing style. Look at the image of the dog and do two things:
 
-1. Write a short, clever quote (1–2 sentences max) in the dog's voice—what they're thinking in the moment. It should be funny, dramatic, or heartwarming.
+1. Write a short, clever quote (1–2 sentences max) in the dog's voice—what they're thinking in the moment. It should be funny, dramatic, or heartwarming. The goal of the quote is to make the reader go "oh wow how did it know that!". There could be funny things to callout in the background of the image. The quote must be clear that it is not a pre-created quote but something that computer vision was used for.
 
-2. Write a short caption (3–5 sentences) that describes the moment in a charming, narrator-style tone. You can exaggerate a bit for comedic effect. It should feel like a cozy voiceover in a feel-good movie or a viral post someone would send to a friend.
-
+2. Write a short descriptive caption (2–4 sentences) that describes the moment in a charming tone. You can slightly exaggerate a bit for comedic effect. It should be a description of what about the image is making the quote say that. 
 Respond clearly labeled as:
 
 **Dog's Thought:** [your quote here]

@@ -11,7 +11,7 @@ const AI_CONFIG = {
   CURRENT_PROVIDER: 'openai',
   MAX_IMAGE_SIZE: 20 * 1024 * 1024, // 20MB (GPT-4o can handle larger images)
   REQUEST_TIMEOUT: 30000, // 30 seconds
-  RATE_LIMIT: 60, // requests per minute
+  RATE_LIMIT: 9999960, // requests per minute
 };
 
 const AI_PROVIDERS = {
@@ -19,8 +19,8 @@ const AI_PROVIDERS = {
     name: 'OpenAI',
     endpoint: 'https://api.openai.com/v1/chat/completions',
     model: 'gpt-4o',
-    maxTokens: 300,
-    temperature: 0.6,
+    maxTokens: 500,
+    temperature: 0.7,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -31,9 +31,9 @@ const AI_PROVIDERS = {
 const PROMPT_CONFIG = {
   default: `Look at the image of the dog and do two things:
 
-1. dog's quote (1–2 sentences max) that answers the question "what is my dog thinking?"
+1. dog's quote (1–3 sentences max) that answers the question "what is my dog thinking?". goal is for the reader to have their "mind blown" because it seems like its actually what the dog is thinking so take into account the entire picture so that once cannot claim that they are random captions.
 
-2. Write a short descriptive caption that indicates what the evidence it has from the dog's body language and the objects of the bakcground to come up with for the quote. An explanation of how it read the dogs mind 
+2. Write a very short witty descriptive caption that indicates what the evidence it has from the dog's body language and the objects of the bakcground to come up with for the quote. An explanation of how it read the dogs mind 
 
 
 Respond clearly labeled as:

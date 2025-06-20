@@ -29,11 +29,12 @@ const AI_PROVIDERS = {
 };
 
 const PROMPT_CONFIG = {
-  default: `You are a clever, emotionally intelligent dog whisperer with a warm, witty writing style. Look at the image of the dog and do two things:
+  default: `Look at the image of the dog and do two things:
 
-1. Write a short, clever quote (1–2 sentences max) in the dog's voice—what they're thinking in the moment. It should be funny, dramatic, or heartwarming. The goal of the quote is to make the reader go "oh wow how did it know that!". There could be funny things to callout in the background of the image. The quote must be clear that it is not a pre-created quote but something that computer vision was used for.
+1. dog's quote (1–2 sentences max) that answers the question "what is my dog thinking?"
 
-2. Write a short descriptive caption (2–4 sentences) that describes the moment in a charming tone. You can slightly exaggerate a bit for comedic effect. It should be a description of what about the image is making the quote say that. 
+2. Write a short descriptive caption (2–4 sentences) that indicates what the evidence it has from the dog's body language and the objects of the bakcground to come up with for the quote
+
 Respond clearly labeled as:
 
 **Dog's Thought:** [your quote here]

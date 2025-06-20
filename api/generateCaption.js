@@ -33,7 +33,8 @@ const PROMPT_CONFIG = {
 
 1. dog's quote (1–2 sentences max) that answers the question "what is my dog thinking?"
 
-2. Write a short descriptive caption (2–4 sentences) that indicates what the evidence it has from the dog's body language and the objects of the bakcground to come up with for the quote
+2. Write a short descriptive caption that indicates what the evidence it has from the dog's body language and the objects of the bakcground to come up with for the quote. An explanation of how it read the dogs mind 
+
 
 Respond clearly labeled as:
 
